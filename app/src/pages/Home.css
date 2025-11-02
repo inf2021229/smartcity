@@ -1,0 +1,72 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100%;
+  padding: 24px 20px 48px;
+  background: linear-gradient(to bottom, #ffffff, #d2fbff);
+  text-align: center;
+}
+
+.home-hero {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #73f1ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -20px;
+  height: 110px;
+  background: radial-gradient(
+    90% 100px at 50% 0,
+    transparent 75%,
+    #ffffff 76%
+  );
+  pointer-events: none;
+}
+
+.brand-title {
+  position: relative;
+  z-index: 1;
+  font-size: 36px;
+  color: #000000;
+  margin-top: 65px;
+}
+
+.home-page-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: #000000;
+  margin: 18px 0 14px;
+}
+
+.home-description {
+  font-size: 20px;
+  color: #000000;
+  margin-bottom: 32px;
+  max-width: 360px;
+  line-height: 1.4;
+}
+
+.home-button {
+  margin-top: 15px;
+  width: 90%;
+  height: 50px;
+  max-width: 350px;
+  font-size: 16px;
+  font-weight: bold;
+  --background: #73f1ff;
+  --color: #000000;
+  --box-shadow: none;
+}
+
+.lock-vh { height: 100svh; overflow: hidden; }

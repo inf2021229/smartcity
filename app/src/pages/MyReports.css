@@ -1,0 +1,78 @@
+.report-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 1px;
+  max-width: 215px;
+}
+
+.report-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: right;
+  min-width: 100px;
+  margin-left: auto;
+  margin-right: 15px;
+}
+
+.page-title {
+  position: relative;
+  z-index: 1;
+  font-size: 36px;
+  font-weight: bolder;
+  color: #000000;
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 25px;
+  display: block;
+  width: 100%;
+}
+
+ion-content.myreports-container {
+  --background: linear-gradient(to bottom, #ffffff, #d2fbff);
+  color: #000000;
+}
+
+.toggle-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 6px 12px;
+}
+.toggle-title { font-weight: 700; color: #000000; }
+.toggle-description { font-size: 13px; color: #000000; opacity: 0.8; margin-bottom: 8px;}
+
+ion-toggle.reports-toggle {
+  --track-background: #e8fafe;
+  --track-background-checked: #73f1ff;
+  --handle-background: #000000;
+  --handle-background-checked: #000000;
+  margin-top: 10px;
+  border: 2px solid rgba(0, 0, 0, 1);
+  border-radius: 10px;
+}
+
+ion-list.reports-list {
+  background: transparent;
+}
+
+ion-item.report-item {
+  --background: #ffffff;
+  --color: #000000;
+  --inner-padding-start: 0px;
+  --inner-padding-end: 0px;
+  margin: 20px 12px;
+  border: 2px solid #73f1ff;
+  border-radius: 30px;
+}
+
+.report-date { font-size: 12px; opacity: 0.7; color: #000000; }
+.report-status { font-size: 13px; font-weight: 800; }
+
+.status-fixed    { color: #16a34a; }  
+.status-progress { color: #d97706; }  
+.status-new      { color: #e53935; }  
+.status-unknown  { color: #6b7280; }

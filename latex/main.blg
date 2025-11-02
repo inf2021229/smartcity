@@ -1,0 +1,22 @@
+[0] Config.pm:328> INFO - This is Biber 2.21
+[0] Config.pm:331> INFO - Logfile is 'main.blg'
+[47] biber:342> INFO - === Sun Nov  2, 2025, 04:42:30
+[57] Biber.pm:421> INFO - Reading 'main.bcf'
+[103] Biber.pm:1002> INFO - Found 35 citekeys in bib section 0
+[113] Biber.pm:4487> INFO - Processing section 0
+[119] Biber.pm:4678> INFO - Looking for bibtex file 'references.bib' for section 0
+[119] bibtex.pm:1713> INFO - LaTeX decoding ...
+[133] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
+[279] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[279] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[279] Biber.pm:4307> INFO - Sorting list 'apa/apasortcite//global/global/global' of type 'entry' with template 'apa' and locale 'en-US'
+[279] Biber.pm:4313> INFO - No sort tailoring available for locale 'en-US'
+[321] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[321] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[321] Biber.pm:4307> INFO - Sorting list 'apa/global//global/global/global' of type 'entry' with template 'apa' and locale 'en-US'
+[321] Biber.pm:4313> INFO - No sort tailoring available for locale 'en-US'
+[342] bbl.pm:676> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[359] bbl.pm:779> INFO - Output to main.bbl
+[359] Biber.pm:132> WARN - BibTeX subsystem: /tmp/biber_tmp_xFGU/33e59b5ca9ec342068223d604c3f8d55_56.utf8, line 2, warning: 4 characters of junk seen at toplevel
+[359] Biber.pm:132> WARN - BibTeX subsystem: /tmp/biber_tmp_xFGU/33e59b5ca9ec342068223d604c3f8d55_56.utf8, line 49, warning: 4 characters of junk seen at toplevel
+[360] Biber.pm:134> INFO - WARNINGS: 2

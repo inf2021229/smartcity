@@ -1,0 +1,86 @@
+\contentsline {chapter}{\numberline {A}Εισαγωγή}{1}{chapter.1}%
+\contentsline {section}{\numberline {A.1}Γενικό Πλαίσιο}{1}{section.1.1}%
+\contentsline {section}{\numberline {A.2}Το πρόβλημα}{2}{section.1.2}%
+\contentsline {section}{\numberline {A.3}Στόχοι και Ερωτήματα}{4}{section.1.3}%
+\contentsline {section}{\numberline {A.4}Δομή Εργασίας}{5}{section.1.4}%
+\contentsline {chapter}{\numberline {B}Θεωρητικό Υπόβαθρο}{6}{chapter.2}%
+\contentsline {section}{\numberline {B.1}Έξυπνη Πόλη}{6}{section.2.1}%
+\contentsline {subsection}{\numberline {B.1.1}Χαρακτηριστικά Έξυπνης Πόλης}{7}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {B.1.2}Θετικά Έξυπνης Πόλης}{7}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {B.1.3}Προκλήσεις και Περιορισμοί}{8}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {B.1.4}Μέλλον των Έξυπνων Πόλεων}{9}{subsection.2.1.4}%
+\contentsline {section}{\numberline {B.2}Κινητές και Διαδικτυακές Εφαρμογές}{9}{section.2.2}%
+\contentsline {subsection}{\numberline {B.2.1}Ο ρόλος των Κινητών Εφαρμογών}{10}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {B.2.2}Εφαρμογές Ιστού ως Συμπληρωματικά Εργαλεία}{10}{subsection.2.2.2}%
+\contentsline {subsection}{\numberline {B.2.3}Μελέτες Περιπτώσεων και Εφαρμογές}{11}{subsection.2.2.3}%
+\contentsline {subsection}{\numberline {B.2.4}Ενσωμάτωση με IoT και άλλων τεχνολογιών}{11}{subsection.2.2.4}%
+\contentsline {subsection}{\numberline {B.2.5}Οφέλη και Εμπόδια}{12}{subsection.2.2.5}%
+\contentsline {section}{\numberline {B.3}GIS}{13}{section.2.3}%
+\contentsline {subsection}{\numberline {B.3.1}Ο ρόλος των GIS στις Έξυπνες Πόλεις}{13}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {B.3.2}Συμμετοχικό GIS}{14}{subsection.2.3.2}%
+\contentsline {section}{\numberline {B.4}Εργαλεία Ιστοσελίδας}{14}{section.2.4}%
+\contentsline {subsection}{\numberline {B.4.1}Leaflet}{15}{subsection.2.4.1}%
+\contentsline {section}{\numberline {B.5}Τεχνολογίες Ανάπτυξης σε Κινητά}{16}{section.2.5}%
+\contentsline {section}{\numberline {B.6}Εργαλεία Κινητής Εφαρμογής}{16}{section.2.6}%
+\contentsline {subsection}{\numberline {B.6.1}Ionic Framework}{17}{subsection.2.6.1}%
+\contentsline {subsubsection}{\numberline {B.6.1.1}React}{17}{subsubsection.2.6.1.1}%
+\contentsline {subsubsection}{\numberline {B.6.1.2}Ionic React}{18}{subsubsection.2.6.1.2}%
+\contentsline {subsubsection}{\numberline {B.6.1.3}Capacitor}{18}{subsubsection.2.6.1.3}%
+\contentsline {subsection}{\numberline {B.6.2}Android και Android Studio}{19}{subsection.2.6.2}%
+\contentsline {subsection}{\numberline {B.6.3}Συγκριτικές Επισκοπήσεις και Πρακτικές}{19}{subsection.2.6.3}%
+\contentsline {section}{\numberline {B.7}Σχετικά Έργα}{20}{section.2.7}%
+\contentsline {subsection}{\numberline {B.7.1}CitySolution}{20}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {B.7.2}Εφαρμογή με χρήση Ionic}{21}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {B.7.3}Δίδαγμα από τις μελέτες}{21}{subsection.2.7.3}%
+\contentsline {chapter}{\numberline {C}Ανάλυση και Σχεδιασμός}{23}{chapter.3}%
+\contentsline {section}{\numberline {C.1}Ανάλυση Απαιτήσεων Χρηστών}{23}{section.3.1}%
+\contentsline {section}{\numberline {C.2}Επιλογή Τεχνολογιών}{26}{section.3.2}%
+\contentsline {subsection}{\numberline {C.2.1}Αιτιολόγηση και Λεπτομέρειες}{27}{subsection.3.2.1}%
+\contentsline {section}{\numberline {C.3}Αρχιτεκτονική Συστήματος}{29}{section.3.3}%
+\contentsline {subsection}{\numberline {C.3.1}Κινητή Εφαρμογή}{30}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {C.3.2}Server}{31}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {C.3.3}Βάση Δεδομένων}{32}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {C.3.4}Ιστοσελίδα}{33}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {C.3.5}Τελικό Αποτέλεσμα}{33}{subsection.3.3.5}%
+\contentsline {section}{\numberline {C.4}Διαγράμματα Χρήσης και Ροής}{34}{section.3.4}%
+\contentsline {subsection}{\numberline {C.4.1}Διάγραμμα Περίπτωσης Χρήσης}{34}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {C.4.2}Διαγράμματα Ροής}{35}{subsection.3.4.2}%
+\contentsline {section}{\numberline {C.5}Σχεδιασμός UI/UX}{37}{section.3.5}%
+\contentsline {subsection}{\numberline {C.5.1}Σχεδίαση Διεπαφής}{37}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {C.5.2}Εμπειρία Χρήστη και Ροή}{40}{subsection.3.5.2}%
+\contentsline {section}{\numberline {C.6}Στρατηγικές Ανάπτυξης}{41}{section.3.6}%
+\contentsline {subsection}{\numberline {C.6.1}Agile}{41}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {C.6.2}Waterfall}{42}{subsection.3.6.2}%
+\contentsline {chapter}{\numberline {D}Ανάπτυξη Εφαρμογής}{44}{chapter.4}%
+\contentsline {section}{\numberline {D.1}Επισκόπηση Υλοποίησης}{44}{section.4.1}%
+\contentsline {section}{\numberline {D.2}Backend}{45}{section.4.2}%
+\contentsline {subsection}{\numberline {D.2.1}Αρχικοποίηση}{45}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {D.2.2}Σύνδεση με την Βάση Δεδομένων}{46}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {D.2.3}Στατικά αρχεία}{47}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {D.2.4}Ρύθμιση Μεταμόρφωσης Αρχείων}{47}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {D.2.5}Εγγραφή και Σύνδεση Χρηστών}{47}{subsection.4.2.5}%
+\contentsline {subsection}{\numberline {D.2.6}Διαχείριση Αναφορών}{49}{subsection.4.2.6}%
+\contentsline {section}{\numberline {D.3}Ιστοσελίδα}{52}{section.4.3}%
+\contentsline {subsection}{\numberline {D.3.1}Αρχικοποίηση και Δημιουργία του Χάρτη}{53}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {D.3.2}Ορισμός Εικονιδίων}{54}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {D.3.3}Ανάκτηση Αναφορών και Τοποθέτηση Δεικτών}{54}{subsection.4.3.3}%
+\contentsline {subsection}{\numberline {D.3.4}Σελίδα Admin}{56}{subsection.4.3.4}%
+\contentsline {section}{\numberline {D.4}Κινητή Εφαρμογή}{62}{section.4.4}%
+\contentsline {subsection}{\numberline {D.4.1}Δομή της Εφαρμογής}{62}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {D.4.2}Σελίδα Καλωσορίσματος}{62}{subsection.4.4.2}%
+\contentsline {subsection}{\numberline {D.4.3}Αρχική Σελίδα}{65}{subsection.4.4.3}%
+\contentsline {subsection}{\numberline {D.4.4}Σελίδα "Οι Καταχωρήσεις μου"}{67}{subsection.4.4.4}%
+\contentsline {subsection}{\numberline {D.4.5}Σελίδα Καταχώρησης}{71}{subsection.4.4.5}%
+\contentsline {section}{\numberline {D.5}Android Studio και Δοκιμές}{74}{section.4.5}%
+\contentsline {section}{\numberline {D.6}Διάγραμμα Ανάπτυξης}{75}{section.4.6}%
+\contentsline {chapter}{\numberline {E}Πειραματισμός}{77}{chapter.5}%
+\contentsline {section}{\numberline {E.1}Σκοπός Πειραματισμού}{77}{section.5.1}%
+\contentsline {section}{\numberline {E.2}Διαδικασία Πειραματισμού και Αποτελέσματα}{78}{section.5.2}%
+\contentsline {subsection}{\numberline {E.2.1}Λειτουργική Επιβεβαίωση}{78}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {E.2.2}Αξιολόγηση}{79}{subsection.5.2.2}%
+\contentsline {section}{\numberline {E.3}Συζήτηση των ευρημάτων}{90}{section.5.3}%
+\contentsline {chapter}{\numberline {F}Συμπεράσματα και Μελλοντική Εργασία}{92}{chapter.6}%
+\contentsline {section}{\numberline {F.1}Συμπεράσματα}{92}{section.6.1}%
+\contentsline {section}{\numberline {F.2}Μελλοντική Εργασία}{93}{section.6.2}%
+\contentsline {chapter}{Συντμήσεις}{98}{chapter*.37}%
+\contentsline {chapter}{Γλωσσάρι Ξενικών Όρων}{99}{chapter*.38}%

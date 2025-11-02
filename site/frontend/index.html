@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>UrbanEye — City Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="header-inner">
+        <h1 class="title">UrbanEye — City Reports</h1>
+        <p class="desc">
+          Live snapshot of reported city issues. Explore the map or use the counters for a quick overview.
+        </p>
+
+        <div class="counters" id="counters">
+          <div class="pill red"><span class="label">New</span><span class="count" id="count-new">0</span></div>
+          <div class="pill orange"><span class="label">In&nbsp;Progress</span><span class="count" id="count-progress">0</span></div>
+          <div class="pill green"><span class="label">Fixed</span><span class="count" id="count-fixed">0</span></div>
+        </div>
+
+        <div class="hint" id="hint">Loading reports…</div>
+      </div>
+    </header>
+
+    <main class="map-wrap">
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const GREECE_BOUNDS = L.latLngBounds([35.5, 21.0], [40.0, 25.5]);
+
+    const map = L.map('map', { zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    map.fitBounds(GREECE_BOUNDS, { padding: [20, 20] });
+
+    const colorIcon = (color) => L.divIcon({
+        className: 'status-pin',
+        html: `<span style="background:${color}"></span>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 18]
+    });
+
+    const ICONS = {
+        1: colorIcon('#e53935'),
+        2: colorIcon('#fb8c00'),
+        0: colorIcon('#43a047'),
+        x: colorIcon('#9e9e9e')
+    };
+
+    const Hint = document.getElementById('hint');
+    const New = document.getElementById('count-new');
+    const Progress = document.getElementById('count-progress');
+    const Fixed  = document.getElementById('count-fixed');
+
+    fetch('/api/reports')
+        .then(r => r.json())
+        .then(reports => {
+        let n=0,p=0,f=0;
+        const layers = [];
+
+        reports.forEach(r => {
+            if (r.status === 1) n++;
+            else if (r.status === 2) p++;
+            else if (r.status === 0) f++;
+
+            const status = [0,1,2].includes(r.status) ? r.status : 'x';
+            const m = L.marker([r.latitude, r.longitude], { icon: ICONS[status] }).addTo(map);
+            let popup = `<b>${r.description ?? 'Report'}</b>`;
+            if (r.image) {
+            popup += `<br><img src="${r.image}" style="width:200px;height:260px;object-fit:cover;border-radius:10px;margin-top:6px;" />`;
+            }
+            m.bindPopup(popup);
+            layers.push(m);
+        });
+
+        New.textContent = n; Progress.textContent = p; Fixed.textContent = f;
+        Hint.textContent = `Showing ${reports.length} reports.`;
+
+        map.fitBounds(GREECE_BOUNDS, { padding: [20, 20], animate: false });
+
+        })
+        .catch(err => {
+        console.error('Error fetching reports:', err);
+        Hint.textContent = 'Failed to load reports.';
+        Hint.classList.add('error');
+        });
+</script>
+</body>
+</html>

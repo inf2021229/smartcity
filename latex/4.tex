@@ -1,0 +1,925 @@
+\section{Επισκόπηση Υλοποίησης}
+\drop{S}{ε} αυτό το κεφάλαιο παρουσιάζεται η εφαρμογή της όλης πλατφόρμας προχωρώντας από το κομμάτι του σχεδιασμού προς το πως υλοποιείται το σύστημα. Η υλοποίηση της πλατφόρμας έξυπνης πόλης ακολούθησε μία προσέγγιση όπου κάθε μέρος της αναπτύσσεται ανεξάρτητα αλλά συνδέεται με τα υπόλοιπα μέσω ενός κοινού backend και μίας κοινής βάσης δεδομένων σε cloud. Το backend δημιουργήθηκε με Node.js και Express χρησιμοποιώντας RESTful APIs για την αναφορά, ανάκτηση και επεξεργασία ή διαγραφή των καταχωρήσεων. Στο κομμάτι της βάσης χρησιμοποιήθηκε η cloud υπηρεσία Atlas του MongoDB. Η κινητή εφαρμογή έγινε μέσω Ionic React και TypeScript, με συνδυασμό με το Capacitor για την πρόσβαση σε λειτουργίες του κινητού όπως κάμερα και τοποθεσία. Η διαδικτυακή ιστοσελίδα αναπτύχθηκε με την χρήση JavaScript και HTML σε συνδυασμό με το Leaflet. Η πλατφόρμα δοκιμάστηκε και κατασκευάστηκε για Android χρησιμοποιώντας το εργαλείο Android Studio ώστε να διασφαλιστεί πως όλες οι λειτουργίες δουλεύουν αξιόπιστα. Οι επόμενες ενότητες αναλύουν τα επιμέρους μέρη λεπτομερώς με κομμάτια κώδικα και στιγμιοτύπων οθόνης για την καλύτερη κατανόηση προς την λειτουργία τους και την διαδικασία της υλοποίησης.
+\newpage
+\section{Backend}
+Το backend είναι το βασικό στοιχείο του συστήματος. Αυτό δουλεύει ενδιάμεσα και ενώνει όλα τα κομμάτια με την βάση δεδομένων. Οι βασικές του λειτουργίες είναι η διαχείριση, μεταμόρφωση και αποθήκευση των δεδομένων. Ακόμα, το ίδιο διαχειρίζεται το ανέβασμα των φωτογραφιών, την ταυτοποίηση και τον χειρισμό των σφαλμάτων. Έτσι διασφαλίζει πως η επικοινωνία μεταξύ ολόκληρης της πλατφόρμας γίνεται σωστά.
+
+\subsection{Αρχικοποίηση}
+Το πρώτο κομμάτι του κώδικα είναι η αρχικοποίηση και ρύθμιση των απαραίτητων πακέτων. Αρχικά, ενεργοποιείται το CORS ώστε να επιτρέπεται στις διεπαφές του συστήματος να έχουν την δυνατότητα να στέλνουν αιτήματα από διαφορετικές προελεύσεις, και δηλώνονται οι μεθόδοι όπου θα είναι επιτρεπτοί. Στην συνέχεια, ορίζεται ένα μεγαλύτερο όριο για την διαχείριση των JSON δεδομένων της εφαρμογής όπου είναι απαραίτητο για την αποστολή εικόνων.
+\\
+
+\begin{lstlisting}[language=JavaScript]
+const express = require('express');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
+const multer = require("multer");
+const path = require("path");
+
+dotenv.config();
+
+const app = express();
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use(express.json({ limit: "50mb" }));
+\end{lstlisting}
+
+Αυτό το τμήμα εξασφαλίζει ότι ο διακομιστής θα είναι έτοιμος για να λάβει HTTP αιτήματα και πως θα μπορεί να επικοινωνεί χωρίς κάποιες περιορίσεις κατά την περιήγηση. Τέλος, δηλώνεται το dotenv όπου δίνει την δυνατότητα σε πληροφορίες, όπως το string σύνδεσης του MongoDB, να παραμείνουν κρυφές εκτός κώδικα αντί να γράφονται απευθείας σε αυτόν.
+\\
+\subsection{Σύνδεση με την Βάση Δεδομένων}
+Στην συνέχεια, ακολουθεί η σύνδεση στο MongoDB Atlas χρησιμοποιώντας την μεταβλητή μέσω του “.env” αρχείου. Αυτή επιβεβαιώνεται μέσω εντολής ping και με κείμενο στην κονσόλα. Σε περίπτωση που δεν επιβεβαιωθεί αυτή η εντολή και δεν υπάρχει σύνδεση, δημιουργείται ένα σφάλμα στο σύστημα το οποίο εντοπίζεται και εμφανίζεται σχετικό μήνυμα. Αφού γίνει η επαλήθευση, ο κώδικας συνδέεται με την απομακρυσμένη βάση δεδομένων και ορίζει την “smart\_city\_db” ως βασική βάση της πλατφόρμας καθώς και φορτώνει τις δύο σύλλογές της. Στην συλλογή "reports" βρίσκονται οι πληροφορίες για τις καταχωρήσεις και στην συλλογή "users" βρίσκονται αντίστοιχα τα στοιχεία των λογαριασμών χρηστών.
+\\
+
+\begin{lstlisting}[language=JavaScript]
+const uri = process.env.MONG_CONN;
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
+
+async function connectToDB() {
+  try {
+    await client.connect();
+    const db = client.db("admin");
+    const result = await db.command({ ping: 1 });
+    console.log("Connected to MongoDB using MongoClient");
+    console.log("Ping successful:", result);
+  } catch (err) {
+    console.error("Failed to connect to MongoDB", err);
+  }
+}
+
+connectToDB();
+
+const db = client.db("smart_city_db");
+const reportsCollection = db.collection("reports");
+const usersCollection = db.collection("users");
+\end{lstlisting}
+\\
+\subsection{Στατικά αρχεία}
+Σε αυτό το μέρος του κώδικα, υλοποιείται η χρήση στατικών αρχείων από το backend και δηλώνεται το frontend. Ο κώδικας δίνει εντολή στο Express να στείλει ότι αρχείο υπάρχει μέσα στο frontend στο αρχικό μονοπάτι της ιστοσελίδας. Αυτό βοηθάει αρκετά στην υποστήριξη απλής φιλοξενίας και γρήγορων δοκιμών κατά την ανάπτυξη.
+\\
+
+\begin{lstlisting}[language=JavaScript]
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
+});
+\end{lstlisting}
+
+\\
+\subsection{Ρύθμιση Μεταμόρφωσης Αρχείων}
+Η μεταμόρφωση των φωτογραφιών από την κινητή εφαρμογή γίνεται μέσω του Multer. Αντί να αποθηκεύεται η φωτογραφία, αυτή εισέρχεται προσωρινά στην μνήμη και μετά στέλνεται απευθείας στην βάση δεδομένων ως δυαδικά δεδομένα. Αυτό απλοποιεί αρκετά το API και αποφεύγει την διαχείριση τοπικών αρχείων.
+\\
+
+\begin{lstlisting}[language=JavaScript]
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+\end{lstlisting}
+
+\\
+\subsection{Εγγραφή και Σύνδεση Χρηστών}
+Η διαχείριση των χρηστών γίνεται με δύο λειτουργίες στον κώδικα, μία για να εγγραφεί και μία για να συνδεθεί. Όταν ο χρήστης εγγράφεται, το email και ο κωδικός τoυ ελέγχονται και πριν αποθηκευτούν στην βαση, ο κωδικός κατακερματίζεται με ασφάλεια με την χρήση του bcrypt.
+\\
+
+\begin{lstlisting}[language=JavaScript]
+app.post('/api/register', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+  try {
+    const existingUser = await usersCollection.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email is already registered' });
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const newUser = { email, password: hashedPassword, createdAt: new Date() };
+    await usersCollection.insertOne(newUser);
+
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+\end{lstlisting}
+\\
+Στο κομμάτι της σύνδεσης γίνεται αναζήτηση στην συλλογή χρηστών της βάσης για το email. Σε περίπτωση που δεν υπάρχει αυτό στο σύστημα εκτυπώνεται πως δεν υπάρχει τέτοιος λογαριασμός. Αντίθετα, γίνεται αυτόματα σύγκριση μέσω του bcrypt μεταξύ του καταχωρημένου κωδικού στην βάση και του κωδικού σύνδεσης. Αν ο κωδικός είναι έγκυρος ή διαφορετικός, ο χρήστης ενημερώνεται μέσω μηνύματος πως συνδέθηκε ή ότι έχει δώσει λανθασμένα στοιχεία αντίστοιχα.
+\\
+
+\begin{lstlisting}[language=JavaScript]
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+  try {
+    const user = await usersCollection.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const safeUser = {
+      _id: user._id,
+      email: user.email,
+      is_admin: !!user.is_admin
+    };
+    return res.status(200).json({
+      message: 'Login successful',
+      user: safeUser,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+\end{lstlisting}
+
+\subsection{Διαχείριση Αναφορών}
+Από την άλλη, υπάρχουν τέσσερις λειτουργίες διαχείρισης για τις αναφορές. Η πρώτη λειτουργία χρησιμοποιείται για την ανάκτηση όλων των αναφορών. Με την χρήση του GET όλες οι αναφορές καλούνται από την βάση δεδομένων και στην συνέχεια οι εικόνες τους μετατρέπονται από δυαδική μορφή σε base64 συμβολοσειρά ώστε να μπορέσουν να εμφανιστούν απευθείας στην ιστοσελίδα χωρίς την χρήση πραγματικής φωτογραφίας από ξεχωριστό server. 
+\newpage
+\begin{lstlisting}[language=JavaScript]
+app.get('/api/reports', async (req, res) => {
+  try {
+    const reports = await reportsCollection.find().toArray();
+    const formattedReports = reports.map(report => ({
+      ...report,
+      image: report.image ? `data:image/jpeg;base64,${report.image.toString("base64")}` : null,
+    }));
+
+    res.json(formattedReports);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+\end{lstlisting}
+
+Η δεύτερη λειτουργία είναι για την αποστολή και αποθήκευση των αναφορών μέσω της χρήσης POST διαδρομής. Κάθε αναφορά αποτελείται από κείμενο περιγραφής, τις τιμές γεωγραφικού πλάτους και μήκους, και την εικόνα. Η ανεβασμένη εικόνα διαβάζεται από την μνήμη και αποστέλλεται στην βάση δεδομένων μαζί με τις υπόλοιπες πληροφορίες. Αυτές οι δύο συναρτήσεις οφείλονται για την υποβολή και προβολή των προβλημάτων μέσω της κινητής εφαρμογής και ιστοσελίδας αντίστοιχα.
+\\
+\begin{lstlisting}[language=JavaScript]
+app.post('/api/reports', upload.single("image"), async (req, res) => {
+  const { description, latitude, longitude, status = "1" } = req.body;
+
+  if (!description || !latitude || !longitude) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  try {
+    let imageBuffer = null;
+    if (req.file) {
+      imageBuffer = req.file.buffer;
+    }
+    console.log("Received Image Blob:", imageBuffer ? "Photo Blob Received" : "No Image");
+
+    const newReport = {
+      description,
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+      status: Number(status),
+      image: imageBuffer,
+      createdAt: new Date(),
+    };
+    
+    await reportsCollection.insertOne(newReport);
+    res.status(201).json(newReport);
+  } catch (error) {
+    console.error("Error saving report:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+\end{lstlisting}
+
+Οι άλλες δύο συναρτήσεις αναφορών, αφορούν τους διαχειριστές όπου θα έχουν την ικανότητα να επεξεργάζονται τις καταχωρήσεις. Αρχικά, η βασική λειτουργία του διαχειριστή αφορά την κατάσταση μίας αναφοράς, αυτό γίνεται μέσω της χρήσης “PATCH’ όπου επιτρέπει την ενημέρωση της χωρίς την τροποποίηση των υπόλοιπων πληροφοριών. Το τελικό αυτό σημείο, δέχεται το ID της αναφοράς μέσω URL και την τιμή της νέας κατάστασης μέσα στο σώμα αιτήματος. Πριν την εφαρμογή της ενημέρωσης, η τιμή ελέγχεται ότι ανήκει στα ήδη ορισμένα αποδεκτά νούμερα (0, 1 και 2). Αν η τιμή είναι σωστή, το σύστημα εντοπίζει αντίστοιχη καταχώρηση μέσα στην βάση και την τροποποιεί αντίστοιχα. Η αλλαγμένη πληροφορία γυρνάει πίσω και εμφανίζεται το αποτέλεσμα σωστά στην διεπαφή.
+\\
+\begin{lstlisting}[language=JavaScript]
+app.patch('/api/reports/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const sNum = Number(req.body?.status);
+  if (![0, 1, 2].includes(sNum)) {
+    return res.status(400).json({ message: 'Invalid status. Use 0, 1, or 2.' });
+  }
+  try {
+    const _id = new ObjectId(id);
+    const result = await reportsCollection.findOneAndUpdate(
+      { _id },
+      { $set: { status: sNum, updatedAt: new Date() } },
+      { returnDocument: 'after' } // returns the updated doc
+    );
+    return res.status(200).json({ message: 'Status updated', report: result.value });
+  } catch (err) {
+    console.error('PATCH status error:', err);
+    return res.status(500).json({ message: err.message });
+  }
+});
+\end{lstlisting}
+
+Η άλλη ενέργεια όπου διαθέτει ένας διαχειριστής είναι η αφαίρεση μίας αναφοράς. Αντίστοιχα με το “PATCH”, η διαγραφή γίνεται μέσω του “DELETE”. Η διαδικασία αυτή δουλεύει παρόμοια, χρησιμοποιώντας το ID της αναφοράς και διαγράφοντας την αντίστοιχη καταχώρηση μέσα στην σωστή συλλογή. Αν δεν βρεθεί η συγκεκριμένη αναφορά, εμφανίζεται μήνυμα πως δεν υπάρχει στην βάση δεδομένων, αντίθετα επιστρέφεται ένα μήνυμα επιβεβαίωσης. Αυτή η συνάρτηση χρησιμοποιείται μόνο για την μόνιμη διαγραφή μίας άκυρης ή σε περίπτωση ίδιας διπλής αναφοράς
+\\
+\begin{lstlisting}[language=JavaScript]
+app.delete('/api/reports/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const _id = new ObjectId(id);
+    const result = await reportsCollection.deleteOne({ _id });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+    return res.status(200).json({ message: 'Report deleted' });
+  } catch (err) {
+    console.error('DELETE report error:', err);
+    return res.status(500).json({ message: err.message });
+  }
+});
+\end{lstlisting}
+
+\section{Ιστοσελίδα}
+Η ιστοσελίδα της πλατφόρμας είναι υπεύθυνη για την διεπαφή των διαχειριστών και την οπτικοποίηση των αναφορών. Η προβολή αυτή γίνεται μέσω ενός αλληλεπιδραστικό χάρτη φτιαγμένος με την βιβλιοθήκη Leaflet όπου φαίνονται πληροφορίες όπως η τωρινή κατάσταση, η ακριβής τοποθεσία και η φωτογραφία του προβλήματος. Η ίδια επικοινωνεί απευθείας με το API στο backend για να πάρει τα δεδομένα και να τα εμφανίσει σε πραγματικό χρόνο.
+
+\subsection{Αρχικοποίηση και Δημιουργία του Χάρτη}
+Η βασική σελίδα της διαδικτυακής εφαρμογής αποτελείται από ένα στατικό HTML αρχείο όπου καθορίζει τον χάρτη χρησιμοποιώντας και συνδέοντας με το Leaflet μέσω CDN σύνδεσης. Η ετικέτα script φορτώνει την βιβλιοθήκη Leaflet όπου παρέχει όλες τις απαραίτητες συναρτήσεις και κλάσεις για την δημιουργία και διαχείριση των χαρτών. Με την χρήση του div με το ID του χάρτη ορίζεται η βασική περιοχή όπου αυτός θα προβάλλεται.
+\begin{lstlisting}[language=HTML]
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div id="map"></div>
+
+<script>
+  const GREECE_BOUNDS = L.latLngBounds([35.5, 21.0], [40.0, 25.5]);
+
+  const map = L.map('map', { zoomControl: true });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  map.fitBounds(GREECE_BOUNDS, { padding: [20, 20] });
+</script>
+\end{lstlisting}
+
+Ακόμα, ορίζεται μέσω γεωγραφικών ορίων η περιοχή της Ελλάδας στο χάρτη, εξασφαλίζοντας την πλήρη εικόνα των αναφορών σε όλη την χώρα. Το επόμενο βήμα είναι η δημιουργία του χάρτη, το οποίο γίνεται καλώντας την συνάρτηση “L.map()” και παραχωρώντας το ID. Επιπλέον, με την χρήση του “L.tileLayer()” εμφανίζεται ένα νέο επίπεδο όπου οπτικοποιεί τους δρόμους πάνω στον χάρτη μέσω του ανοικτού κώδικα της OpenStreetMap. Με τον συνδυασμό όλων αυτών, ο χρήστης κατά την διάρκεια χρήσης θα έχει την δυνατότητα να περιφέρεται στον χάρτη και να ζουμάρει καθώς όλα φορτώνουν και αλληλεπιδρούν ομαλά.
+
+\subsection{Ορισμός Εικονιδίων}
+Κάθε αναφορά εμφανίζεται ως ένας χρωματιστός δείκτης όπου αντιπροσωπεύει την τωρινή κατάσταση της. Σε αυτό το μέρος, τρία διαφορετικά εικονίδια δημιουργούνται για να μπορούν να διακριθούν τα προβλήματα ανάλογα με την κατάσταση τους. Η χρήση δεικτών με διαφορετικά χρώματα διευκολύνει αυτή την ιδιότητα έχοντας:
+\begin{itemize}
+  \item Κόκκινο: ένα νέο πρόβλημα
+  \item Πορτοκαλί: ένα πρόβλημα που επιδιορθώνεται
+  \item Πράσινο: ένα πρόβλημα που διορθώθηκε
+\end{itemize}
+
+Η οπτικοποίηση των καταχωρήσεων γίνεται με την χρήση ελαφριών “div” εικονιδίων της Leaflet με συνδυασμό ενός χρώματος ανάλογα με την κατάσταση του. Η επεξεργασία των εικονιδίων αυτών πραγματοποιείται μέσα στην “L.divIcon” χρησιμοποιώντας την μεταβλητή χρώματος και προσαρμοσμένες τιμές μεγέθους.
+\\
+
+\begin{lstlisting}[language=HTML]
+const colorIcon = (color) => L.divIcon({
+  className: 'status-pin',
+  html: `<span style="background:${color}"></span>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 18]
+});
+
+const ICONS = {
+  1: colorIcon('#e53935'),  // New
+  2: colorIcon('#fb8c00'),  // In progress
+  0: colorIcon('#43a047'),  // Fixed
+};
+
+\end{lstlisting}
+
+\subsection{Ανάκτηση Αναφορών και Τοποθέτηση Δεικτών}
+Μετά την ρύθμιση του χάρτη, η ιστοσελίδα χρειάζεται να λάβει όλες τις καταχωρήσεις από την βάση, το οποίο γίνεται με ένα απλό αίτημα fetch. Η απάντηση του αιτήματος παρέχει δεδομένα σε μορφή JSON και εξασφαλίζει πως καλεί τα πιο πρόσφατα δεδομένα χωρίς την ανάγκη για χειροκίνητη ανανέωση.
+\\
+\begin{lstlisting}[language=HTML]
+const Hint = document.getElementById('hint');
+const New = document.getElementById('count-new');
+const Progress = document.getElementById('count-progress');
+const Fixed  = document.getElementById('count-fixed');
+
+fetch('/api/reports')
+  .then(r => r.json())
+  .then(reports => {
+    let n=0,p=0,f=0;
+    const layers = [];
+
+    reports.forEach(r => {
+      if (r.status === 1) n++;
+      else if (r.status === 2) p++;
+      else if (r.status === 0) f++;
+      
+      const status = [0,1,2].includes(r.status) ? r.status : 'x';
+      const m = L.marker([r.latitude, r.longitude], { icon: ICONS[status] }).addTo(map);
+      let popup = `<b>${r.description ?? 'Report'}</b>`;
+      if (r.image) {
+        popup += `<br><img src="${r.image}" style="width:200px;height:260px;object-fit:cover;border-radius:10px;margin-top:6px;" />`;
+      }
+      m.bindPopup(popup);
+      layers.push(m);
+    });
+    New.textContent = n; Progress.textContent = p; Fixed.textContent = f;
+    Hint.textContent = `Showing ${reports.length} reports.`;
+
+    map.fitBounds(GREECE_BOUNDS, { padding: [20, 20], animate: false });
+  })
+  .catch(err => {
+  console.error('Error fetching reports:', err);
+  Hint.textContent = 'Failed to load reports.';
+  Hint.classList.add('error');
+});
+\end{lstlisting}
+\newpage
+Κάθε εικονίδιο τοποθετείται με βάση τις συντεταγμένες της αναφοράς του. Όταν αυτό πατηθεί, εμφανίζεται ένα popup παράθυρο όπου περιέχει την περιγραφή και την εικόνα, κάτι που δίνει την δυνατότητα στους χρήστες να μπορούν να βρουν γρήγορα και εύκολα λεπτομέρειες απευθείας από τον χάρτη. Μόλις όλες οι αναφορές έχουν ενταχθεί στον χάρτη, οι μετρητές στο πάνω μέρος της σελίδας ενημερώνονται και δείχνουν τον αριθμό κάθε κατηγορίας καθώς και τον αριθμό όλων μαζί. 
+\\
+\\
+Αν προκύψει κάποιο σφάλμα κατά την εκτέλεση, αυτό εισέρχεται στο “.catch()” το οποίο ενημερώνει το σύστημα και εμφανίζεται σχετικό μήνυμα στην κονσόλα και στην σελίδα ώστε να ενημερωθούν οι χρήστες.
+
+\subsection{Σελίδα Admin}
+Η σελίδα “Admin” της ιστοσελίδας είναι ένα απλό αρχείο, όπως και η βασική σελίδα του χάρτη, και χρησιμεύει ως πίνακας ελέγχου όπου ένας διαχειριστής συνδέεται και εκτελεί ενημερώσεις στις υπάρχουσες αναφορές. Η πρόσβαση σε αυτή την σελίδα γίνεται μέσω της ειδικής διεύθυνσης URL “/admin” και η σύνδεση σε αυτή διατηρείται για όσο παραμένει ανοιχτή.
+
+\subsubsection*{Σύνδεση Διαχειριστή}
+Κατά την εισαγωγή στην σελίδα, θα πρέπει ο διαχειριστής να συνδεθεί με τον λογαριασμό του. Μέσω της συνάρτησης “AdminLogin()”, ο χρήστης συνδέεται με τα στοιχεία του τα οποία στέλνονται στην βάση μέσω του “/api/login”. Για να πραγματοποιηθεί η σύνδεση, θα πρέπει να ελεγχθεί πρώτα αν ο χρήστης αυτός είναι διαχειριστής μέσω της τιμής “is\textunderscore admin”, το οποίο γίνεται μέσα στο backend. Αν αυτό πετύχει δημιουργείται ένα session με τα στοιχεία του και εμφανίζεται ο πίνακας ελέγχου. Σε περίπτωση που δεν υπάρχει ο λογαριασμός ή αντίστοιχα υπάρχει αλλά δεν έχει δικαιώματα διαχειριστή, εμφανίζεται σχετικό μήνυμα.
+\\
+\begin{lstlisting}[language=HTML]
+async function AdminLogin(){
+  err.classList.add('hide'); err.textContent='';
+  const email = u_email.value.trim();
+  const password = u_pass.value;
+  if(!email || !password){
+    err.textContent='Enter email and password.';
+    err.classList.remove('hide');
+    return;
+  }try{
+    const res = await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error('Login failed');
+    if(!data?.user?.is_admin) throw new Error('This account is not an admin.');
+    const u = { email: data.user.email, id: String(data.user._id), is_admin: true };
+    setSession(u);
+    showDash();
+    await loadReports();
+  }catch(e){
+    err.textContent = 'Login error';
+    err.classList.remove('hide');
+  }}
+\end{lstlisting}
+
+\subsubsection*{Φόρτωση Αναφορών}
+Η βασική συνάρτηση της σελίδας μετά την σύνδεση είναι αυτή της φόρτωσης των αναφορών, η οποία ουσιαστικά καλεί όλες τις υπόλοιπες συναρτήσεις.
+\\
+\begin{lstlisting}[language=HTML]
+async function loadReports(){
+  const all = await fetchReports();
+  cache = all;
+  const filtered = applyFilters(all);
+  renderRows(filtered);
+  renderCounters(filtered);
+}
+\end{lstlisting}
+
+\subsubsection*{Ανάκτηση Αναφορών}
+Αρχικά, εκτελείται η ανάκτηση των αναφορών από το σημείο “/api/reports”.
+\begin{lstlisting}[language=HTML]
+async function fetchReports(){
+  const res = await fetch('/api/reports');
+  const data = await res.json();
+  if(!res.ok) throw new Error('Failed to load reports');
+  return Array.isArray(data)? data : (data?.reports || []);
+}
+\end{lstlisting}
+
+\subsubsection*{Φιλτράρισμα Λίστας}
+Προχωρώντας πραγματοποιείται το φιλτράρισμα στην λίστα δεδομένων με βάση την κατάσταση και την περιγραφή τους. Αν δεν υπάρχει κάποιο ενεργό φίλτρο, η λίστα παραμένει ολόκληρη. Στο τέλος, η τελική λίστα στέλνεται πίσω ταξινομημένη με βάση την ημερομηνία.
+\\
+\begin{lstlisting}[language=HTML]
+function applyFilters(all){
+  const s = statusFilter.value;
+  const q = searchBox.value.trim().toLowerCase();
+  let list = all;
+  if(s!=='') list = list.filter(r => String(r.status)===s);
+  if(q) list = list.filter(r => (r.description||'').toLowerCase().includes(q));
+  return list.sort((a,b)=> (new Date(b.createdAt)-new Date(a.createdAt)));
+}
+\end{lstlisting}
+
+\subsubsection*{Δημιουργία Σειρών}
+Αφού γίνει το φιλτράρισμα, αρχικά δημιουργούνται οι σειρές της λίστας αναφορών. Η λειτουργία γίνεται μέσω κομματιού html όπου για κάθε αναφορά μέσα στην λίστα δημιουργείται μία σειρά (reportRow). Κάθε σειρά αποτελείται από την περιγραφή, τις συντεταγμένες, την ημερομηνία και την κατάσταση της καταχώρησης. Ακόμα, υπάρχει μία τελευταία στήλη όπου περιέχει κουμπιά ενεργειών ώστε ο διαχειριστής να διαλέξει την κατάσταση που θέλει να θέσει σε μία αναφορά ή να την διαγράψει τελείως. Στο τέλος, η κάθε σειρά προστίθεται στον πίνακα, χωρίς την ανάγκη ανανέωσης της σελίδας.
+\\
+\begin{lstlisting}[language=HTML]
+function renderRows(list) {
+  tbody.innerHTML = '';
+  list.forEach(r => {
+    const reportRow = document.createElement('reportRow');
+    reportRow.dataset.id = String(r._id);
+    reportRow.innerHTML = `
+      <td>${r.description}</td>
+      <td>${(r.latitude?.toFixed?.(5) ?? '')}, ${(r.longitude?.toFixed?.(5) ?? '')}</td>
+      <td>${toDateStr(r.createdAt)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn" data-act="set" data-id="${r._id}" data-val="1">New</button>
+          <button class="btn" data-act="set" data-id="${r._id}" data-val="2">In Progress</button>
+          <button class="btn" data-act="set" data-id="${r._id}" data-val="0">Fixed</button>
+          <button class="btn danger" data-act="del" data-id="${r._id}">Delete</button>
+        </div>
+      </td>`;
+    tbody.appendChild(reportRow);
+  });
+}
+\end{lstlisting}
+
+\subsubsection*{Δημιουργία Μετρητών}
+Μετά την φόρτωση των σειρών, τελευταίοι φορτώνονται οι μετρητές κάθε κατάστασης. Η συνάρτηση, για κάθε είδος κατάστασης, μετράει το σύνολο της ώστε αυτό να οπτικοποιηθεί πάνω από την λίστα. Μαζί με τους μετρητές, εμφανίζεται και ο συνολικός αριθμός όλης της λίστας.
+\\
+\begin{lstlisting}[language=HTML]
+function renderCounters(list){
+  let n=0,p=0,f=0;
+  list.forEach(r=>{ if(r.status===1) n++; else if(r.status===2) p++; else if(r.status===0) f++; });
+  cNew.textContent=n; cProg.textContent=p; cFix.textContent=f;
+  summary.textContent = `Showing ${list.length} reports.`;
+}
+\end{lstlisting}
+
+\subsubsection*{Ενέργειες}
+Για να την ενημέρωση και διαγραφή των αναφορών, χρησιμοποιείται μία συνάρτηση όπου ενεργοποιείται όταν πατηθεί ένα από τα κουμπιά σε μία σειρά από την λίστα. Αρχικά, ανακτάται το ID και η ενέργεια, και αναλόγως το είδος της εκτελείται διαφορετική σειρά εντολών. Αν η ενέργεια έχει τεθεί σαν “set”, τότε η λαμβάνεται και η τιμή νέας κατάστασης, η οποία τοποθετείται μέσα στο σώμα του αιτήματος “PATCH” με ενσωματωμένο το ID και στέλνεται στο backend ώστε να γίνει η αλλαγή. Αν όμως είναι “del”, τότε στέλνεται σκέτο αίτημα “DELETE” με το ID ώστε να αφαιρεθεί. Αφού γίνει η αντίστοιχη ενέργεια, μετά καλείται ξανά η φόρτωση των αναφορών.
+\\
+\begin{lstlisting}[language=HTML]
+tbody.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button[data-act]');
+  if(!btn) return;
+
+  const id  = btn.getAttribute('data-id');
+  const act = btn.getAttribute('data-act');
+
+  try{
+    if(act==='set'){
+      const val = Number(btn.getAttribute('data-val'));
+      await fetch(`/api/reports/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: val })
+      });
+    }else if(act==='del'){
+      await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+    }
+    await loadReports();
+  }catch(err){ alert('Action failed'); }
+});
+\end{lstlisting}
+
+\subsubsection*{Διαχείριση του Session}
+Τέλος, η λειτουργία του session γίνεται με τους παρακάτω τρόπους. Αρχικά, μετά από την σύνδεση, όλα τα στοιχεία του διαχειριστή, σε μορφή JSON, αποθηκεύονται στο sessionStorage κάτω από ένα σταθερό κλειδί. Η συναρτήσεις “setSession()” και “getSession()” χειρίζονται την αποθήκευση και ανάκτηση των πληροφοριών, ενώ το “clearSession()” τις αφαιρεί κατά την αποσύνδεση. Με βάση την ύπαρξη του session με admin, αποφασίζεται αν θα πρέπει να εμφανιστεί η φόρμα σύνδεσης “showLogin()” ή ο πίνακας ελέγχου “showDash()”.
+\\
+\begin{lstlisting}[language=HTML]
+const session_key = '';
+const loginBox = document.getElementById('login');
+const dashBox  = document.getElementById('dash');
+const logoutBtn = document.getElementById('logoutBtn');
+
+function getSession() {
+  try {return JSON.parse(sessionStorage.getItem(session_key));} 
+  catch {return null;}
+}
+
+function setSession(obj){sessionStorage.setItem(session_key, JSON.stringify(obj));}
+function clearSession(){sessionStorage.removeItem(session_key);}
+
+function showLogin() {
+  loginBox.classList.remove('hide');
+  dashBox.classList.add('hide');
+  logoutBtn.classList.add('hide');
+}
+function showDash() {
+  loginBox.classList.add('hide');
+  dashBox.classList.remove('hide');
+  logoutBtn.classList.remove('hide');
+}
+
+const sess = getSession();
+if (sess?.is_admin){showDash(); loadReports();} else {showLogin();}
+\end{lstlisting}
+
+\section{Κινητή Εφαρμογή}
+Η κινητή εφαρμογή θεωρείται η βασική διεπαφή της πλατφόρμας και μέσω αυτής οι πολίτες μπορούν να καταχωρήσουν αναφορές για θέματα όπου αντιμετωπίζουν στην πόλη τους. Η ανάπτυξη της έγινε μέσω του Ionic React και της Typescript ώστε να είναι ελαφρία και φιλική προς τον χρήστη. Με την χρήση του Capacitor και των plugin του η ίδια παίρνει πρόσβαση σε λειτουργίες της συσκευής.
+
+\subsection{Δομή της Εφαρμογής}
+Η δομή της εφαρμογής χωρίζεται σε διαφορετικές σελίδες για καλύτερη λειτουργία και συντήρηση του κώδικα. Στο αρχείο App.tsx ορίζεται η κύρια λογική δρομολόγησης μέσα στην εφαρμογή και θεωρείται ως το σημείο εισόδου της. Αυτό διαχειρίζεται την πλοήγηση ανάμεσα στις σελίδες χρησιμοποιώντας τον δρομολογητή της Ionic.
+\\
+\\
+Όλες οι σελίδες βρίσκονται μέσα στον φάκελο pages και κάθε μία αντιπροσωπεύει μία λειτουργία της εφαρμογής. Οι λειτουργίες αυτές είναι:
+\begin{itemize}
+  \item Η δημιουργία και σύνδεση στον λογαριασμό χρήστη
+  \item Το βασικό μενού της εφαρμογής
+  \item Την λίστα των καταχωρήσεων του χρήστη
+  \item Την φόρμα καταχώρησης των αναφορών
+\end{itemize}
+
+Αυτός ο τρόπος δόμησης βοηθάει στην διατήρηση ενός σαφή διαχωρισμού μεταξύ των οπτικών και των λειτουργικών σημείων της εφαρμογής. Ακόμα, διευκολύνει τον εντοπισμό σφαλμάτων και την περαιτέρω ανάπτυξη αφού όλα βρίσκονται στο δικό τους αρχείο.
+
+\subsection{Σελίδα Καλωσορίσματος}
+Η πρώτη σελίδα της εφαρμογής είναι αυτή του καλωσορίσματος όπου λειτουργεί ως μία πύλη εισόδου πριν το βασικό μενού. Από εδώ, ο χρήστης μπορεί να δημιουργήσει λογαριασμό και να συνδεθεί με αυτόν. Λειτουργικά η οθόνη αποτελείται από εισόδους κειμένου, επικοινωνεί με το API του backend και κρατάει την ταυτότητα του χρήστη για χρήση στις υπόλοιπες σελίδες της εφαρμογής μετά που θα συνδεθεί. 
+
+\subsubsection*{Αρχικοποίηση Λειτουργιών}
+Αυτό το κομμάτι χρησιμοποιείται για την αρχικοποίηση των λειτουργιών όπου θα χρειαστούν στην σελίδα ώστε να μπορέσει να υλοποιήσει την δημιουργία και σύνδεση των λογαριασμών των χρηστών.
+\\
+\begin{lstlisting}[language=JavaScript]
+const [email, setEmail] = useState('');   
+const [password, setPassword] = useState('');
+const [busy, setBusy] = useState(false);
+const [toast, setToast] = useState<{ open: boolean; msg: string }>({ open: false, msg: '' });
+const router = useIonRouter();
+\end{lstlisting}
+
+Στην πράξη το “email” και “password” διατηρούν τις εισόδους και το toast εμφανίζει μηνύματα σε μορφή ειδοποίησης στον χρήστη. Ακόμα, η εντολή “busy” δημιουργεί μία κατάσταση φόρτωσης όταν πραγματοποιούνται ασύγχρονες κλήσεις. Τέλος, το “router” χρησιμοποιείται για την καθοδήγηση του χρήστη στα επόμενα στάδια της εφαρμογής
+
+\subsubsection*{Λειτουργία Σύνδεσης}
+Η λειτουργία σύνδεσης είναι υπεύθυνη για την επαλήθευση υπάρχοντων χρηστών μέσα στην εφαρμογή. Αρχικά, σιγουρεύει πως έχουν εισχαθεί και τα δύο απαραίτητα πεδία του email και του κωδικού αλλιώς στέλνει σχετική ειδοποίηση στον χρήστη. Προχωρώντας, φορτώνει και στέλνει ένα αίτημα POST στο τελικό σημείο “/api/login” στο backend. Το σώμα αιτήματος που περιέχει τις πληροφορίες του χρήστη μεταμορφώνεται σε μορφή JSON και η απάντηση του μετά αναλύεται. Αν η απάντηση είναι επιτυχής το id και το email του χρήστη αποθηκεύονται τοπικά στην συσκευή χρησιμοποιώντας την λειτουργία API “Preferences” του Capacitor. Αυτό επιτρέπει στην εφαρμογή να αποθηκεύει τα δεδομένα για την συγκεκριμένη περίοδο σύνδεσης του χρήστη ώστε να χρησιμοποιηθούν στις επόμενες σελίδες. Ένα μήνυμα επιβεβαίωσης εμφανίζεται για να ενημερώσει τον χρήστη πως συνδέθηκε με επιτυχία και η εφαρμογή μεταφέρεται στην αρχική “Home” σελίδα. Αν η επιβεβαίωση αποτύχει η συνάρτηση εμφανίζει σχετικό μήνυμα σφάλματος. Τέλος, η σελίδα βγαίνει από την λειτουργία φόρτωσης.
+\\
+\begin{lstlisting}[language=JavaScript]
+const handleLogin = async () => {
+  if (!email || !password) {
+    setToast({ open: true, msg: 'Please enter both email and password.' });
+    return;
+  }
+  try {
+    setBusy(true);
+    const response = await fetch('https://smart-city.koyeb.app/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+
+    if (response.ok && data.user) {
+      const userEmail = data.user.email ?? email.trim();
+      await Preferences.set({key:'user_id', value: String(userId) });
+      await Preferences.set({ key: 'user_email', value: userEmail });
+      await Preferences.set({key: 'user', value: JSON.stringify({ _id: userId, email: userEmail})});
+      console.log('Saved user info:', { userId, userEmail });
+      setToast({ open: true, msg: 'Login successful!' });
+      router.push('/home', 'root');
+    } else {
+      setToast({open: true, msg: 'Invalid email or password.'});
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    setToast({ open: true, msg: 'Failed to connect to server.' });
+  } finally {
+    setBusy(false);
+  }
+};
+\end{lstlisting}
+
+\subsubsection*{Λειτουργία Εγγραφής}
+Η λειτουργία εγγραφής διαχειρίζεται την δημιουργία των νέων λογαριασμών χρηστών. Παρομοίως με την σύνδεση, τσεκάρετε ότι τα πεδία είναι συμπληρωμένα. Μετά, μπαίνει στην κατάσταση φόρτωσης και στέλνει τα δεδομένα σε μορφή JSON με αίτημα POST στο σημείο “/api/register”. Το backend επεξεργάζεται τα δεδομένα και επιστρέφει αν δημιουργήθηκε ο λογαριασμός. Αν η δημιουργία έγινε με επιτυχία, ο χρήστης ειδοποιείται πως ο λογαριασμός του έχει δημιουργηθεί και πλέον μπορεί να συνδεθεί σε αυτόν. Αν ο λογαριασμός υπάρχει ήδη, ενημερώνεται ο χρήστης κατάλληλα αντί να δημιουργηθεί καινούργιος λογαριασμός. Παρομοίως με την σύνδεση, στο τέλος κλείνει η λειτουργία φόρτωσης στην σελίδα.
+\\
+\begin{lstlisting}[language=JavaScript]
+const handleRegister = async () => {
+  if (!email || !password) {
+    setToast({ open: true, msg: 'Please enter email and password.' });
+    return; }
+  try {
+    setBusy(true);
+    const response = await fetch('https://smart-city.koyeb.app/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      setToast({ open: true, msg: 'Account created successfully! You can now log in.' });
+    } else {
+      setToast({ open: true, msg: 'Registration failed.' });
+    }
+  } catch (err) {
+    console.error('Registration error:', err);
+    setToast({ open: true, msg: 'Failed to connect to server.' });
+  } finally {setBusy(false);}
+};
+\end{lstlisting}
+
+\subsection{Αρχική Σελίδα}
+
+Η αρχική σελίδα λειτουργεί ως ένα κεντρικό σημείο πλοήγησης του χρήστη στις άλλες δύο σελίδες της εφαρμοφής. Έτσι δίνει στον χρήστη την επιλογή να διαλέξει ο ίδιος αν θέλει να προχωρήσει στην σελίδα καταχώρησης ή στην σελίδα εμφάνισης των καταχωρήσεων του. Η μεταφορά στις επόμενες σελίδες γίνεται μέσω του “useIonRouter();” της Ionic React και υλοποιείται μέσα σε δύο συναρτήσεις.
+
+\\
+\begin{lstlisting}[language=JavaScript]
+const router = useIonRouter();
+const [presentAlert] = useIonAlert();
+\end{lstlisting}
+
+\subsubsection*{Μεταφορά στην σελίδα Καταχώρησης}
+Η κύρια συνάρτηση έχει να κάνει με την μεταφορά στην σελίδα καταχώρησης και διαχειρίζεται την διαδικασία αιτήματος των δικαιωμάτων τοποθεσίας της συσκευής πριν την εισαγωγή του σε αυτή. Όταν πατηθεί το κατάλληλο κουμπί, καλείται απευθείας η “Geolocation.requestPermissions()” του Capacitor όπου ζητάει από τον χρήστη να παραχωρήσει την τωρινή του τοποθεσία. Αν δοθεί η έγκριση, το router μεταφέρει τον χρήστη στην επόμενη σελίδα όπου βρίσκεται η φόρμα καταχώρησης προβλήματος. Αν όμως δεν εγκριθεί, εμφανίζεται μια ειδοποίηση μέσω του “useIonicAlert()” ενημερώνοντας ότι η χρήση τοποθεσίας είναι απαραίτητη για να προχωρήσει παρακάτω. Η ειδοποίηση ακόμα περιέχει την επιλογή στον χρήστη να ανοίξει τις ρυθμίσεις κινητού στην εφαρμογή μέσω του “openAppSettings()” του Capacitor, δίνοντας στον χρήστη την δυνατότητα να δώσει τα δικαιώματα ο ίδιος χειροκίνητα. Αν προκύψει κάποιο σφάλμα, εμφανίζεται κατάλληλη ειδοποίηση όπου ενημερώνει τον χρήστη. 
+\\
+\begin{lstlisting}[language=JavaScript]
+const handleReportButtonClick = async () => {
+  try {
+    const permissionStatus = await Geolocation.requestPermissions();
+    if (permissionStatus.location === 'granted') {
+      router.push('/report', 'forward');
+    } else if (permissionStatus.location === 'denied') {
+      presentAlert({
+        header: 'Permission Denied',
+        message: 'Location permission is required to report an issue. Please enable it in your phone settings.',
+        buttons: [
+          {
+            text: 'Open Settings',
+            handler: () => {
+              Capacitor?.Plugins?.App?.openAppSettings?.();
+            },
+          },
+          'Cancel',
+        ],
+      });
+    }
+  } catch (error) {
+    console.error('Error requesting location permission', error);
+    presentAlert({
+      header: 'Error',
+      message: 'An error occurred while requesting location permission.',
+      buttons: ['OK'],
+    });
+  }
+};
+\end{lstlisting}
+
+\subsubsection*{Μεταφορά στην σελίδα Λίστας Καταχωρήσεων}
+Η δεύτερη συνάρτηση απλά οδηγεί τον χρήστη στην σελίδα “Οι Καταχωρήσεις μου” η οποία περιέχει μία λίστα με τις καταχωρήσεις του χρήστη αλλά και όλες τις ήδη καταχωρημένες αναφορές μέσα στην βάση. Η διαδικασία της μεταφοράς σε αυτή την περίπτωση δεν χρειάζεται καμία επιπλέον λειτουργία είτε δικαιώματα οπότε ο χρήστης προχωράει κανονικά. 
+\\
+\begin{lstlisting}[language=JavaScript]
+const goToMyReports = () => router.push('/my-reports', 'forward');
+\end{lstlisting}
+
+\subsection{Σελίδα "Οι Καταχωρήσεις μου"}
+Αυτή η σελίδα είναι υπεύθυνη για την ανάκτηση και την παρουσίαση μία λίστας αναφορών όπου είτε ανήκουν στον συνδεδεμένο χρήστη ή σε όλους τους χρήστες. Γενικά, διαβάζει το id του user, δημιουργεί ένα API αίτημα το οποίο επηρεάζεται από το κουμπί εναλλαγής “Show All” και δέχεται μία απάντηση δεδομένων. Τα δεδομένα αυτά, τα ταξινομεί με βάση την ημερομηνία και τα εμφανίζει ανάλογα. 
+
+\subsubsection*{Αρχικοποίηση}
+Η αρχικοποίηση της σελίδας περιέχει μία απλή κατάσταση για φόρτωση, τις αναφορές, σφάλματα, το φίλτρο “show all” για να ξέρει ποια δεδομένα να εμφανίσει και το id του χρήστη.
+\\
+\begin{lstlisting}[language=JavaScript]
+const [loading, setLoading] = useState(true);
+const [reports, setReports] = useState<Report[]>([]);
+const [error, setError] = useState<string | null>(null);
+const [showAll, setShowAll] = useState(false);
+const [userId, setUserId] = useState<string>('');
+\end{lstlisting}
+
+\subsubsection*{Συνάρτηση Καταστάσεων}
+Μία σύντομη συνάρτηση όπου μετατρέπει το πεδίο κατάστασης όπου έχει ληφθεί από την βάση για κάθε αναφορά στο κατάλληλο χρώμα και όνομα. Κρατώντας την ξεχωριστά από τα άλλα μέρη του κώδικα βοηθάει κάνοντας τον έλεγχο πιο απλό.
+\\
+\begin{lstlisting}[language=JavaScript]
+const statusInfo = (s?: number) => (
+  s === 1 ? { text: 'New',         color: '#e53935' } :
+  s === 2 ? { text: 'In Progress', color: '#fb8c00' } :
+  s === 0 ? { text: 'Fixed',       color: '#43a047' } :
+            { text: 'Unknown',     color: '#9e9e9e' }
+);
+
+\end{lstlisting}
+
+\subsubsection*{Ανάκτηση Δεδομένων}
+Αυτό το μέρος του κώδικα χειρίζεται την αλλαγή μεταξύ του αν εμφανιστούν τα δεδομένα του χρήστη μόνο ή όλα τα δεδομένα μαζί. Η ανάκτηση τους γίνεται μέσω δύο url στο σημείο “api/report”. Αναλόγως την περίπτωση είτε καλείται το κλασικό αίτημα ή ένα με το id του user ενσωματωμένο. Αφού δεχθεί τα δεδομένα τα ταξινομεί με βάση την ημερομηνία σε φθίνουσα σειρά. Τέλος, υπάρχουν χειρισμοί σφαλμάτων και φόρτωσης σε όλη την διαδικασία.
+\\
+\begin{lstlisting}[language=JavaScript]
+useEffect(() => {
+  (async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { value: uid } = await Preferences.get({ key: 'user_id' });
+      setUserId(uid || '');
+      const url = (!showAll && uid)
+        ? `https://smart-city.koyeb.app/api/reports?userId=${encodeURIComponent(uid)}`
+        : 'https://smart-city.koyeb.app/api/reports';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Failed to load reports');
+      const all: Report[] = Array.isArray(data) ? data : data?.reports || [];
+      const sorted = all.sort((a, b) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+      setReports(sorted);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load reports');
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [showAll]);
+\end{lstlisting}
+Η εναλλαγή γίνεται μέσω ενός switch με το “IonToggle” όπου απλά γυρνάει το flag “showAll”. Έτσι γίνεται αλλαγή και επαναλαμβάνεται ξανά η ανάκτηση από το κατάλληλο τελικό σημείο.
+
+\begin{lstlisting}[language=JavaScript]
+<IonToggle
+  checked={showAll}
+  onIonChange={e => setShowAll(e.detail.checked)}
+/>
+\end{lstlisting}
+
+\subsubsection*{Φόρτωση Αναφορών στην λίστα}
+Η λογική της φόρτωσης πριν την εμφάνιση της λίστας αποτελείται από τρία αποτελέσματα. Αρχικά, αν υπάρχει φόρτωση δεδομένων αυτό φαίνεται μέσω ψεύτικων γραμμών χρησιμοποιώντας το “IonSkeletonText”. Αν δεν υπάρχουν δεδομένα εμφανίζεται ένα απλό μήνυμα “No reports found”. Αν υπάρξει κάποιο σφάλμα εμφανίζεται ένα κόκκινο μήνυμα αποτυχίας φόρτωσης. Τέλος, εμφανίζεται η λίστα κανονικά.
+\\
+\begin{lstlisting}[language=JavaScript]
+{loading ? (
+  <IonList>
+    {[...Array(5)].map((_, i) => (
+      <IonItem key={i}>
+        <IonLabel>
+          <h2><IonSkeletonText animated style={{ width: '60%' }} /></h2>
+          <p><IonSkeletonText animated style={{ width: '40%' }} /></p>
+        </IonLabel>
+      </IonItem>
+    ))}
+  </IonList>
+) : error ? (
+  <IonText color="danger">{error}</IonText>
+) : reports.length === 0 ? (
+  <IonText>No reports found.</IonText>
+) : (
+  <IonList>{/* ... */}</IonList>
+)}
+\end{lstlisting}
+
+\subsubsection*{Λίστα}
+Η λίστα δημιουργείται με την χρήση της “IonList”. Κάθε αναφορά μέσα στην λίστα, εμφανίζεται η περιγραφή της και διαμορφώνεται η ημερομηνία της σε καλύτερη μορφή. Ακόμα, τα δεδομένα τοποθεσίας της μειώνονται για καλύτερη ανάγνωση και φορτώνεται η κατάσταση της μαζί με το χρώμα της μέσω του “statusInfo”.
+\\
+\begin{lstlisting}[language=JavaScript]
+<IonList>
+  {reports.map((r) => {
+    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleString() : '';
+    const { text, color } = statusInfo(r.status);
+
+    return (
+      <IonItem key={r._id} lines="full">
+        <IonLabel className="report-left">
+          <h2>{r.description}</h2>
+          <p>
+            {typeof r.latitude === 'number' ? r.latitude.toFixed(5) : r.latitude},{' '}
+            {typeof r.longitude === 'number' ? r.longitude.toFixed(5) : r.longitude}
+          </p>
+        </IonLabel>
+
+        <div className="report-right">
+          <div className="report-date">{dateStr}</div>
+          <div className="report-status" style={{ color }}>{text}</div>
+        </div>
+      </IonItem>
+    );
+  })}
+</IonList>
+\end{lstlisting}
+
+\subsection{Σελίδα Καταχώρησης}
+Η σελίδα καταχώρησης είναι η πιο σημαντική καθώς εδώ εκτελείται η βασική λειτουργία της εφαρμογής η οποία είναι η αποστολή αναφορών. Η διαδικασία αρχίζει βγάζοντας μια φωτογραφία μέσω της κάμερας της συσκευής. Αυτόματα μόλις φορτωθεί η φωτογραφία συλλέγονται και οι γεωγραφικές τιμές της συσκευής εκείνη την στιγμή. Μαζί με μία σύντομη περιγραφή από τον χρήστη όλες αυτές οι πληροφορίες εισάγονται και στέλνονται στην βάση δεδομένων. 
+
+\subsubsection*{Αρχικοποίηση}
+Όπως και στις άλλες σελίδες αρχικοποιούνται λειτουργίες όπου θα χρειαστούν στην σελίδα. Κάποιες από αυτές είναι η φωτογραφία, περιγραφή, flag φόρτωσης, συντεταγμένες και ένα μήνυμα επαλήθευσης.
+\\
+\begin{lstlisting}[language=JavaScript]
+const [photo, setPhoto] = useState<string | null>(null);
+const [description, setDescription] = useState<string>('');
+const [loading, setLoading] = useState<boolean>(true);
+const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
+const [showToast, setShowToast] = useState(false);
+const history = useHistory();
+\end{lstlisting}
+
+\subsubsection*{Λειτουργία Κάμερας}
+Η συνάρτηση καλεί την κάμερα του κινητού και αποθηκεύει ένα URI. Χρησιμοποιώντας το “resultType: Uri” διατηρείται χαμηλή χρήση μνήμης και μεταφέρεται η μετατροπή σε δυαδικό αρχείο στο βήμα υποβολής.
+\\
+\begin{lstlisting}[language=JavaScript]
+const takePhoto = async () => {
+  try {
+    const photo = await Camera.getPhoto({
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Camera,
+      quality: 50,
+      width: 600,
+    });
+    setPhoto(photo.webPath || null);
+  } catch (error) {
+    console.error('Error taking photo', error);
+  }
+};
+\end{lstlisting}
+
+\subsubsection*{Συλλογή Συντεταγμένων}
+Μία σύντομη συνάρτηση όπου συλλέγει τις συντεταγμένες της συσκευής και τις αποθηκεύει ως τιμές πλάτους και μήκους πριν την τελική υποβολή.
+\\
+\begin{lstlisting}[language=JavaScript]
+const getGeolocation = async () => {
+  try {
+    const position = await Geolocation.getCurrentPosition();
+    setLocation({ lat: position.coords.latitude, lon: position.coords.longitude });
+  } catch (error) {
+    console.error('Error getting geolocation', error);
+  }
+};
+\end{lstlisting}
+
+\subsubsection*{Κατάσταση Φόρτωσης}
+Η σελίδα μπαίνει στο σημείο φόρτωσης καθώς περιμένει τις τιμές από τις συναρτήσεις φωτογραφίας και τοποθεσίας, οι οποίες εκτελούνται ταυτόχρονα.
+\\
+\begin{lstlisting}[language=JavaScript]
+useEffect(() => {
+  const init = async () => {
+    setLoading(true);
+    await Promise.all([takePhoto(), getGeolocation()]);
+    setLoading(false);
+  };
+  init();
+}, []);
+\end{lstlisting}
+
+\subsubsection*{Συνάρτηση Υποβολής}
+Η βασική συνάρτηση της σελίδας είναι αυτή της υποβολής. Αρχίζει διαβάζοντας τα αποθηκευμένα στοιχεία του χρήστη, από τα οποία παίρνει το id του. Αφού το πάρει, οργανώνει τα δεδομένα σε μία φόρμα υποβολής και μετατρέπει την εικόνα από URI σε δυαδική μορφή μέσω του Βlob. Τέλος, στέλνει αίτημα POST στο τελικό σημείο “/api/reports” και περιμένει την απάντηση. Αν είναι θετική ειδοποιεί τον χρήστη πως η αναφορά του καταχωρήθηκε με επιτυχία και τον επιστρέφει στην αρχική σελίδα. Αντίστοιχα αν είναι αρνητική ή αν προκύψει κάποιο σφάλμα ο χρήστης ειδοποιείται ανάλογα.
+\\
+\begin{lstlisting}[language=JavaScript]
+async function submitReport(description: string, latitude: number, longitude: number, imageUri: string) {
+  const { value } = await Preferences.get({ key: 'user' });
+  const user = value ? JSON.parse(value) : null;
+  const userId = user?._id || '';
+  try {
+    const formData = new FormData();
+    formData.append('description', description);
+    formData.append('latitude', latitude.toString());
+    formData.append('longitude', longitude.toString());
+    formData.append('user_id', userId);
+    if (imageUri) {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      formData.append('image', blob, 'report.jpg');
+    }
+    const response = await fetch('https://smart-city.koyeb.app/api/reports', {
+      method: 'POST',
+      body: formData,
+      mode: 'cors',
+    });
+    const data = await response.json();
+    if (response.ok) {
+      setShowToast(true);
+      setTimeout(() => history.push('/home'), 2000);
+    } else {
+      console.error('Failed to submit report:', data.message);
+    }
+  } catch (error) {
+    console.error('Error submitting report:', error);
+  }
+}
+\end{lstlisting}
+
+Πριν εκτελεστεί η συνάρτηση υποβολής, υπάρχει σχετικός έλεχγος ότι όλα τα δεδομένα έχουν εισαχθεί με επιτυχία ή όχι κατά το πάτημα του κουμπιού "Submit".
+\\
+\begin{lstlisting}[language=JavaScript]
+<IonButton
+  expand="block"
+  onClick={() => {
+    if (description && location && photo) {
+      submitReport(description, location.lat, location.lon, photo);
+    } else {
+      alert('Please provide a description and allow location access.');
+    }
+  }}
+>
+  Submit
+</IonButton>
+\end{lstlisting}
+
+\section{Android Studio και Δοκιμές}
+Η εφαρμογή δοκιμάστηκε απευθείας σε μία πραγματική συσκευή Android χρησιμοποιώντας τις εντολές του Capacitor CLI, χωρίς την εκτέλεση μίας πλήρης ανάπτυξης μέσω του Android Studio. Το ίδιο το Android Studio χρησιμοποιήθηκε κυρίως για την εύκολη εγκατάσταση των απαραίτητων SDKs και εργαλείων για ώστε να μπορεί να αναγνωριστεί η συσκευή καθώς και τον έλεγχο των logs κονσόλας κατά την δοκιμή της εφαρμογής. Η διαδικασία δοκιμής ήταν αρκετά απλή. Στην συσκευή χρειάζεται να ενεργοποιηθούν τα “Developer Options” και η ρύθμιση “USB Debugging”. Από την μεριά του υπολογιστή, η εφαρμογή δημιουργήθηκε χρησιμοποιώντας την εντολή \textbf{npm run build} και συγχρονίστηκε χρησιμοποιώντας την εντολή \textbf{npx cap sync android}. Στη συνέχεια, εκτελέστηκε με την εντολή \textbf{npx cap run android} όπου μαζί με την επιλογή της σωστής συσκευής, δημιουργεί την εφαρμογή εισάγοντας την σε αυτή. Αυτή η προσέγγιση επέτρεψε γρήγορες ενημερώσεις και δοκιμές χωρίς την ανάγκη ανοίγματος του έργου μέσα σε IDE όπως το Android Studio για την εκτέλεση. 
+\\
+\\
+Κατά την διάρκεια των δοκιμών, ελέγχθηκε ότι τα δικαιώματα της κάμερας και της τοποθεσίας λειτουργούσαν κανονικά, δείχνοντας καθαρά μηνύματα. Ακόμα, επιβεβαιώθηκε πως η υποβολή λειτουργούσε όπως ήταν αναμενόμενο κάνοντας αρκετές δοκιμές τραβώντας φωτογραφία, γράφοντας περιγραφή και υποβάλλοντας τα μέσω της εφαρμογής. Τέλος, δοκιμάστηκαν όλες οι υπόλοιπες σελίδες με δοκιμές στην δημιουργία και στην σύνδεση χρήστη, την εμφάνιση της λίστας και την σωστή καθοδήγηση της αρχικής σελίδας. Γενικά, όλα τα τεστ επιβεβαίωσαν ότι η εφαρμογή δουλεύει σωστά και ομαλά στο Android και επικοινωνεί με τις υπηρεσίες του backend.
+\\
+\section{Διάγραμμα Ανάπτυξης}
+Το ανεπτυγμένο σύστημα, αποτελείται από δύο ειδών clients, τους κανονικούς χρήστες και τους διαχειριστές, όπως φαίνεται στο σχήμα \ref{fig:deployment-diagram}. Οι απλοί χρήστες έχουν πρόσβαση στην πλατφόρμα μέσω της κινητής εφαρμογής, η οποία δημιουργείται μέσω ενός αρχείου “apk”, το οποίο μπορεί να εγκατασταθεί σε οποιαδήποτε συσκευή Android χωρίς την ανάγκη ειδικών εργαλείων όπως το Android Studio. Μετά την εγκατάσταση, ο χρήστης μπορεί να ανοίξει και να χρησιμοποιήσει την εφαρμογή. Οι διαχειριστές αποκτούν πρόσβαση στο σύστημα μέσω της ιστοσελίδας χρησιμοποιώντας ένα πρόγραμμα περιήγησης. Οι δύο αυτές διεπαφές επικοινωνούν με τον server μέσω αιτημάτων HTTP (API). Όταν ένας από αυτούς τους χρήστες εκτελεί μία ενέργεια, το αντίστοιχο αίτημα στέλνεται στον server.
+\\
+\\
+Ο server φιλοξενεί σε cloud και το frontend της ιστοσελίδας καθώς και την λογική του backend. Το backend δέχεται εισερχόμενα αιτήματα API, τα διαχειρίζεται και αποφασίζει τις κατάλληλες ενέργειες. Όταν τα δεδομένα πρέπει να αποθηκευτούν, να επεξεργαστούν ή να ανακτηθούν, τότε αυτό επικοινωνεί με την cloud βάση του MongoDB Atlas. Η σύνδεση μεταξύ τους γίνεται δυνατή μέσω μίας συμβολοσειράς σύνδεσης όπου παρέχεται από την MongoDB. Η βάση δεδομένων δεν συνδέεται ποτέ απευθείας με τα clients καθώς η επικοινωνία γίνεται αποκλειστικά μέσω του backend. Με αυτό τον τρόπο, τα τρία επίπεδα του τελικού συστήματος δουλεύουν εύκολα μαζί, δημιουργώντας μία λειτουργική και ασφαλής πλατφόρμα.
+\\
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\textwidth]{images/deployment-diagram.jpg}
+\caption{Διάγραμμα Ανάπτυξης Συστήματος}
+\label{fig:deployment-diagram}
+\end{figure}

@@ -1,0 +1,87 @@
+.welcome-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 20px;
+  background: linear-gradient(to bottom, #ffffff, #d2fbff);
+  text-align: center;
+  overflow: hidden;
+}
+
+.welcome-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/src/assets/greece.svg") center/contain no-repeat;
+  background-size: 240%;
+  background-position: center 80%;
+  opacity: 0.03;
+  z-index: 0;
+}
+
+.welcome-container * {
+  position: relative;
+  z-index: 1;
+}
+  
+  .page-title {
+    font-size: 36px;
+    font-weight: bolder;
+    color: #000000;
+  }
+
+  .icon {
+    width: 170px;
+    height: 170px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    color: #000000;
+  }
+  
+  .welcome-description-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #000000;
+  }
+  
+  .welcome-description {
+    font-size: 18px;
+    color: #000000;
+    margin-bottom: 25px;
+  }
+  
+  .welcome-input {
+    width: 90%;
+    max-width: 350px;
+    margin: 10px 0;
+    --border-radius: 100px;
+    --border-color: #73f1ff;
+    --border-width: 2px;
+    --background: #ffffff;
+    border-color: #73f1ff;
+    color: #000000;
+  }
+  
+  .welcome-button {
+    margin-top: 20px;
+    width: 90%;
+    height: 50px;
+    max-width: 350px;
+    font-size: 16px;
+    font-weight: bold;
+    --background: #73f1ff;
+    --color: #000000;
+    --box-shadow: none;
+  }
+  
+  .forgot-password {
+    font-size: 16px;
+    color: #555;
+    margin-top: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  

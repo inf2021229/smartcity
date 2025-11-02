@@ -1,0 +1,37 @@
+.report-container {
+  padding: 16px;
+  text-align: center;
+  background: linear-gradient(to bottom, #ffffff, #d2fbff);
+  color: #000000;
+}
+
+.report-container img {
+  margin-bottom: 16px;
+  border-radius: 10px;
+}
+
+.photo-description {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #000000;
+}
+
+.button {
+  margin-top: 20px;
+  width: 90%;
+  height: 50px;
+  max-width: 350px;
+  font-size: 16px;
+  font-weight: bold;
+  --background: #73f1ff;
+  --color: #000000;
+  --box-shadow: none;
+
+  display: block;
+  margin-left: auto;
+  margin-right: auto; 
+}
+
+
+.lock-vh { height: 100svh; overflow: hidden; }
+.no-scroll::part(scroll) { overflow: hidden; }
