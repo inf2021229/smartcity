@@ -33,7 +33,7 @@ npx cap run android    #select the device when prompted
 
 ###  Website and Backend
 
-Open a terminal in the site folder.
+Open a terminal in the site folder:
 ```bash
 cd site/backend
 npm install 
