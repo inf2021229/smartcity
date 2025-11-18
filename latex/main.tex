@@ -1,5 +1,5 @@
 \documentclass[a4paper,11pt,oneside,openany]{ioniothesis}
-
+\usepackage[utf8]{inputenc}
 \usepackage[backend=biber,style=apa]{biblatex}
 \DefineBibliographyStrings{english}{and = {και}}
 
@@ -10,42 +10,24 @@
 \usepackage{booktabs,calc,multirow}
 \usepackage{alphabeta}
 %\usepackage[greek,english]{babel}
-\usepackage[utf8]{inputenc}
 \usepackage{amssymb}
 \usepackage{amsfonts}
 \usepackage{color}
 \usepackage{ioniostyle}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{listingsutf8}
+\lstset{
+  inputencoding=utf8,
+  literate={©}{{\textcopyright}}1
+}
 
 \usepackage[hidelinks]{hyperref}
-
+\usepackage{adjustbox}
 \usepackage[none]{hyphenat}
 \emergencystretch=2em
 
-\lstset{language=javascript,
-	frame=tb,
-	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
-	identifierstyle=\ttfamily,
-	commentstyle=\color[rgb]{0.133,0.545,0.133},
-	stringstyle=\color[rgb]{0.8,0,0},
-	showstringspaces=false,
-	basicstyle=\small,
-	numberstyle=\footnotesize,
-	numbers=left,
-	stepnumber=1,
-	numbersep=10pt,
-	tabsize=4,
-	breaklines=true,
-	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-	breakatwhitespace=false,
-	aboveskip={0.5\baselineskip},
-  columns=fixed,
-  upquote=true,
-  extendedchars=true,
-}
-
-\lstset{language=html,
+\lstset{
 	frame=tb,
 	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
 	identifierstyle=\ttfamily,
@@ -86,12 +68,12 @@
 
 \author{\textbf{Νικόλαος Τρυπάκης} \\ \textbf{Επιβλέπων:}  Ιωάννης Καρύδης}
 \title{
-\textbf{\LARGE{\textsc{ΙΟΝΙΟ ΠΑΝΕΠΙΣΤΗΜΙΟ}} 
+\textbf{\LARGE{\textsc{Ιονιο Πανεπιστημιο}} 
 \bigskip \\
 \large{\textsc{Τμήμα Πληροφορικής}}
 \bigskip \\ \bigskip \bigskip \bigskip
 \bigskip \bigskip 
-\includegraphics[width=0.3\textwidth]{./images/ionio_logo.jpg}
+\includegraphics[width=0.2\textwidth]{./images/ionio_logo.jpg}
 \bigskip \\ \bigskip 
 \texttt{\large{-- Πτυχιακή Εργασία --}}
 \bigskip \\ \bigskip
@@ -122,7 +104,7 @@
 \end{center}
 \prof{Ιωάννης Καρύδης}{Αναπληρωτής Καθηγητής}{Τμήμα Πληροφορικής, Ιόνιο Πανεπιστήμιο}
 \prof{Μάριος Αναγνώστου}{Επίκουρος Καθηγητής}{Τμήμα Πληροφορικής, Ιόνιο Πανεπιστήμιο}
-\prof{Μάρκος Αυλωνίτης}{Καθηγητής}{Τμήμα Πληροφορικής, Ιόνιο Πανεπιστήμιο}
+\prof{Ιωσήφ Πολενάκης}{Επίκουρος Καθηγητής}{Τμήμα Πληροφορικής, Ιόνιο Πανεπιστήμιο}
 
 
 
